@@ -99,6 +99,110 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_notifications: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          id: string
+          message: string
+          notification_type: string
+          recipient_email: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string | null
+          subject: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          id?: string
+          message: string
+          notification_type: string
+          recipient_email: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string | null
+          subject: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          notification_type?: string
+          recipient_email?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_notifications_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointment_waitlist: {
+        Row: {
+          created_at: string
+          id: string
+          patient_id: string
+          preferred_date: string | null
+          preferred_doctor_id: string | null
+          preferred_time_end: string | null
+          preferred_time_start: string | null
+          priority_level: number | null
+          reason_for_visit: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_id: string
+          preferred_date?: string | null
+          preferred_doctor_id?: string | null
+          preferred_time_end?: string | null
+          preferred_time_start?: string | null
+          priority_level?: number | null
+          reason_for_visit?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_id?: string
+          preferred_date?: string | null
+          preferred_doctor_id?: string | null
+          preferred_time_end?: string | null
+          preferred_time_start?: string | null
+          priority_level?: number | null
+          reason_for_visit?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_waitlist_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_waitlist_preferred_doctor_id_fkey"
+            columns: ["preferred_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           ai_confidence_score: number | null
@@ -554,6 +658,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_appointment_conflicts: {
+        Args: {
+          p_appointment_date: string
+          p_start_time: string
+          p_end_time: string
+          p_doctor_id?: string
+          p_room_id?: string
+          p_exclude_appointment_id?: string
+        }
+        Returns: {
+          conflict_type: string
+          conflicting_appointment_id: string
+          conflict_details: Json
+        }[]
+      }
+      find_optimal_appointment_slots: {
+        Args: {
+          p_date: string
+          p_duration_minutes?: number
+          p_doctor_id?: string
+          p_room_type?: string
+        }
+        Returns: {
+          suggested_time: string
+          confidence_score: number
+          available_doctor_id: string
+          available_room_id: string
+          optimization_factors: Json
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
