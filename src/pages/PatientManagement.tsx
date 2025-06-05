@@ -45,7 +45,7 @@ const PatientManagement = () => {
         .from('patients')
         .select(`
           *,
-          user:users(*),
+          user:users!patients_user_id_fkey(first_name, last_name, email, phone),
           primary_doctor:users!patients_primary_doctor_id_fkey(first_name, last_name)
         `);
 
