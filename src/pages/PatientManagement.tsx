@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { 
   Search, 
   Plus, 
@@ -15,39 +18,101 @@ import {
   Phone,
   Mail,
   MapPin,
-  Activity
+  Activity,
+  Edit,
+  Trash2,
+  Filter,
+  FileText
 } from "lucide-react";
+import { toast } from "sonner";
+import AddPatientDialog from "@/components/AddPatientDialog";
+import EditPatientDialog from "@/components/EditPatientDialog";
+import PatientDetailsPanel from "@/components/PatientDetailsPanel";
 
 const PatientManagement = () => {
-  const patients = [
-    {
-      id: 1,
-      name: "Emily Johnson",
-      age: 34,
-      condition: "Hypertension",
-      lastVisit: "2024-06-01",
-      status: "stable",
-      aiSuggestion: "Schedule follow-up in 3 months"
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      age: 45,
-      condition: "Diabetes Type 2",
-      lastVisit: "2024-05-28",
-      status: "needs-attention",
-      aiSuggestion: "Blood sugar monitoring recommended"
-    },
-    {
-      id: 3,
-      name: "Sarah Williams",
-      age: 28,
-      condition: "Pregnancy Checkup",
-      lastVisit: "2024-06-03",
-      status: "stable",
-      aiSuggestion: "Next prenatal visit in 4 weeks"
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<any>(null);
+  const queryClient = useQueryClient();
+
+  // Fetch patients with user data
+  const { data: patients = [], isLoading } = useQuery({
+    queryKey: ['patients', searchTerm],
+    queryFn: async () => {
+      let query = supabase
+        .from('patients')
+        .select(`
+          *,
+          user:users(*),
+          primary_doctor:users!patients_primary_doctor_id_fkey(first_name, last_name)
+        `);
+
+      if (searchTerm) {
+        query = query.or(`patient_id.ilike.%${searchTerm}%,users.first_name.ilike.%${searchTerm}%,users.last_name.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching patients:', error);
+        toast.error('Failed to fetch patients');
+        return [];
+      }
+      
+      return data;
     }
-  ];
+  });
+
+  // Delete patient mutation
+  const deletePatientMutation = useMutation({
+    mutationFn: async (patientId: string) => {
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', patientId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success('Patient deleted successfully');
+      if (selectedPatientId) {
+        setSelectedPatientId(null);
+      }
+    },
+    onError: (error) => {
+      console.error('Error deleting patient:', error);
+      toast.error('Failed to delete patient');
+    }
+  });
+
+  const handleEditPatient = (patient: any) => {
+    setEditingPatient(patient);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeletePatient = (patientId: string) => {
+    if (confirm('Are you sure you want to delete this patient? This action cannot be undone.')) {
+      deletePatientMutation.mutate(patientId);
+    }
+  };
+
+  const calculateAge = (dateOfBirth: string) => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  const selectedPatient = patients.find(p => p.id === selectedPatientId);
 
   return (
     <Layout>
@@ -58,7 +123,10 @@ const PatientManagement = () => {
             <h1 className="text-3xl font-bold text-slate-900">Patient Management</h1>
             <p className="text-slate-600">Manage patient records with AI-powered insights</p>
           </div>
-          <Button className="healthcare-gradient text-white">
+          <Button 
+            onClick={() => setIsAddDialogOpen(true)}
+            className="healthcare-gradient text-white"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add New Patient
           </Button>
@@ -73,10 +141,14 @@ const PatientManagement = () => {
                 <Input 
                   placeholder="Search patients by name, ID, or condition..." 
                   className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline">Filter</Button>
-              <Button variant="outline">Sort</Button>
+              <Button variant="outline">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -88,150 +160,136 @@ const PatientManagement = () => {
               <CardHeader>
                 <CardTitle>Patient Records</CardTitle>
                 <CardDescription>
-                  {patients.length} patients • AI recommendations available
+                  {patients.length} patients • Real-time data from database
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {patients.map((patient) => (
-                  <Card key={patient.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <Avatar>
-                          <AvatarFallback className="bg-blue-100 text-blue-700">
-                            {patient.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold text-slate-900">{patient.name}</h3>
-                          <p className="text-sm text-slate-600">Age {patient.age} • {patient.condition}</p>
-                          <p className="text-xs text-slate-500">Last visit: {patient.lastVisit}</p>
+                {isLoading ? (
+                  <div className="text-center py-8">Loading patients...</div>
+                ) : patients.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    {searchTerm ? 'No patients found matching your search.' : 'No patients registered yet.'}
+                  </div>
+                ) : (
+                  patients.map((patient) => (
+                    <Card 
+                      key={patient.id} 
+                      className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${
+                        selectedPatientId === patient.id ? 'ring-2 ring-blue-500' : ''
+                      }`}
+                      onClick={() => setSelectedPatientId(patient.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <Avatar>
+                            <AvatarFallback className="bg-blue-100 text-blue-700">
+                              {patient.user?.first_name?.[0]}{patient.user?.last_name?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold text-slate-900">
+                              {patient.user?.first_name} {patient.user?.last_name}
+                            </h3>
+                            <p className="text-sm text-slate-600">
+                              Age {calculateAge(patient.date_of_birth)} • ID: {patient.patient_id}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Primary Doctor: {patient.primary_doctor?.first_name} {patient.primary_doctor?.last_name}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="bg-green-100 text-green-700">
+                            Active
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditPatient(patient);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePatient(patient.id);
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge 
-                          variant={patient.status === 'stable' ? 'default' : 'destructive'}
-                          className={patient.status === 'stable' ? 'bg-green-100 text-green-700' : ''}
-                        >
-                          {patient.status === 'stable' ? 'Stable' : 'Needs Attention'}
-                        </Badge>
-                        <Button variant="outline" size="sm">View</Button>
-                      </div>
-                    </div>
-                    
-                    {/* AI Suggestion */}
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-start space-x-2">
-                        <Brain className="h-4 w-4 text-blue-600 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-blue-900">AI Recommendation</p>
-                          <p className="text-xs text-blue-700">{patient.aiSuggestion}</p>
+                      
+                      {/* Medical Info Preview */}
+                      {(patient.allergies?.length > 0 || patient.current_medications?.length > 0) && (
+                        <div className="mt-3 pt-3 border-t border-slate-200">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            {patient.allergies?.length > 0 && (
+                              <div>
+                                <span className="font-medium text-red-600">Allergies:</span>
+                                <span className="ml-1 text-slate-600">
+                                  {patient.allergies.slice(0, 2).join(', ')}
+                                  {patient.allergies.length > 2 && '...'}
+                                </span>
+                              </div>
+                            )}
+                            {patient.current_medications?.length > 0 && (
+                              <div>
+                                <span className="font-medium text-blue-600">Medications:</span>
+                                <span className="ml-1 text-slate-600">
+                                  {patient.current_medications.slice(0, 2).join(', ')}
+                                  {patient.current_medications.length > 2 && '...'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                      )}
+                    </Card>
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Patient Details Panel */}
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Selected Patient</CardTitle>
-                <CardDescription>Emily Johnson</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="history">History</TabsTrigger>
-                    <TabsTrigger value="ai">AI Insights</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="overview" className="space-y-4 mt-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Phone className="h-4 w-4 text-slate-400" />
-                        <span>+1 (555) 123-4567</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Mail className="h-4 w-4 text-slate-400" />
-                        <span>emily.johnson@email.com</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <MapPin className="h-4 w-4 text-slate-400" />
-                        <span>123 Main St, City, State</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Calendar className="h-4 w-4 text-slate-400" />
-                        <span>DOB: March 15, 1990</span>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4 border-t">
-                      <h4 className="font-medium mb-2">Current Conditions</h4>
-                      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                        Hypertension
-                      </Badge>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="history" className="space-y-4 mt-4">
-                    <div className="space-y-3">
-                      <div className="border-l-2 border-blue-200 pl-3">
-                        <p className="text-sm font-medium">June 1, 2024</p>
-                        <p className="text-xs text-slate-600">Routine checkup - Blood pressure stable</p>
-                      </div>
-                      <div className="border-l-2 border-blue-200 pl-3">
-                        <p className="text-sm font-medium">March 15, 2024</p>
-                        <p className="text-xs text-slate-600">Hypertension diagnosis - Started medication</p>
-                      </div>
-                      <div className="border-l-2 border-blue-200 pl-3">
-                        <p className="text-sm font-medium">January 8, 2024</p>
-                        <p className="text-xs text-slate-600">Annual physical - Elevated BP detected</p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="ai" className="space-y-4 mt-4">
-                    <div className="space-y-3">
-                      <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                        <div className="flex items-start space-x-2">
-                          <Activity className="h-4 w-4 text-green-600 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-green-900">Treatment Adherence</p>
-                            <p className="text-xs text-green-700">94% medication compliance rate</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-start space-x-2">
-                          <Brain className="h-4 w-4 text-blue-600 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-blue-900">Risk Assessment</p>
-                            <p className="text-xs text-blue-700">Low risk for complications</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <div className="flex items-start space-x-2">
-                          <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-orange-900">Recommendation</p>
-                            <p className="text-xs text-orange-700">Schedule follow-up in 3 months</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+            {selectedPatient ? (
+              <PatientDetailsPanel patient={selectedPatient} />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Patient Details</CardTitle>
+                  <CardDescription>Select a patient to view details</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center py-8 text-slate-500">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                  <p>Click on a patient from the list to view their detailed information and medical history.</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
+
+        {/* Dialogs */}
+        <AddPatientDialog 
+          open={isAddDialogOpen} 
+          onOpenChange={setIsAddDialogOpen}
+        />
+        
+        {editingPatient && (
+          <EditPatientDialog 
+            open={isEditDialogOpen} 
+            onOpenChange={setIsEditDialogOpen}
+            patient={editingPatient}
+          />
+        )}
       </div>
     </Layout>
   );
