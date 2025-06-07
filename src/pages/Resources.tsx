@@ -1,9 +1,11 @@
 
+import { useState } from 'react';
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Home, 
   Activity, 
@@ -12,10 +14,30 @@ import {
   CheckCircle, 
   Clock,
   Brain,
-  Zap
+  Zap,
+  TrendingUp,
+  Thermometer
 } from "lucide-react";
+import ResourceAlerts from "@/components/ResourceAlerts";
+import EnergyMonitor from "@/components/EnergyMonitor";
+import RoomOccupancyTracker from "@/components/RoomOccupancyTracker";
+import MaintenanceScheduler from "@/components/MaintenanceScheduler";
+import { useRealtimeResources } from "@/hooks/useRealtimeResources";
+import { useResourceOptimization } from "@/hooks/useResourceManagement";
 
 const Resources = () => {
+  useRealtimeResources(); // Enable real-time updates
+  const { getOptimization } = useResourceOptimization();
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const handleOptimize = () => {
+    getOptimization.mutate({
+      date: new Date().toISOString().split('T')[0],
+      goals: ['efficiency', 'energy', 'cost']
+    });
+  };
+
+  // Mock data for overview stats - in real app this would come from the hooks
   const rooms = [
     { id: 1, name: "Consultation Room 1", status: "occupied", patient: "Emily Johnson", doctor: "Dr. Chen", timeLeft: "15 min" },
     { id: 2, name: "Consultation Room 2", status: "available", patient: null, doctor: null, timeLeft: null },
@@ -60,17 +82,21 @@ const Resources = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Resource Management</h1>
-            <p className="text-slate-600">AI-optimized allocation of rooms and equipment</p>
+            <p className="text-slate-600">AI-optimized allocation with real-time monitoring</p>
           </div>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
               <CheckCircle className="w-3 h-3 mr-1" />
-              85% Efficiency
+              92% Efficiency
             </Badge>
             <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50 ai-glow">
               <Brain className="w-3 h-3 mr-1" />
               AI Optimized
             </Badge>
+            <Button onClick={handleOptimize} disabled={getOptimization.isPending}>
+              <Brain className="w-4 h-4 mr-2" />
+              Optimize Now
+            </Button>
           </div>
         </div>
 
@@ -123,144 +149,173 @@ const Resources = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Room Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Room Status</CardTitle>
-              <CardDescription>Real-time room availability and occupancy</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {rooms.map((room) => (
-                <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Home className="h-4 w-4 text-slate-400" />
-                    <div>
-                      <p className="font-medium text-slate-900">{room.name}</p>
-                      {room.patient && (
-                        <p className="text-sm text-slate-600">{room.patient} • {room.doctor}</p>
-                      )}
-                      {room.timeLeft && (
-                        <p className="text-xs text-slate-500">
-                          {room.status === 'maintenance' ? 'Maintenance time: ' : 'Time remaining: '}{room.timeLeft}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className={getStatusColor(room.status)}>
-                      {getStatusIcon(room.status)}
-                      {room.status.charAt(0).toUpperCase() + room.status.slice(1)}
-                    </Badge>
-                    <Button variant="outline" size="sm">Manage</Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="occupancy">Room Tracking</TabsTrigger>
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+            <TabsTrigger value="energy">Energy Monitor</TabsTrigger>
+            <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          </TabsList>
 
-          {/* Equipment Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Equipment Status</CardTitle>
-              <CardDescription>Medical equipment monitoring and utilization</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {equipment.map((item) => (
-                <div key={item.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Activity className="h-4 w-4 text-slate-400" />
-                      <div>
-                        <p className="font-medium text-slate-900">{item.name}</p>
-                        <p className="text-sm text-slate-600">{item.location}</p>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Room Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Room Status</CardTitle>
+                  <CardDescription>Real-time room availability and occupancy</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {rooms.map((room) => (
+                    <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <Home className="h-4 w-4 text-slate-400" />
+                        <div>
+                          <p className="font-medium text-slate-900">{room.name}</p>
+                          {room.patient && (
+                            <p className="text-sm text-slate-600">{room.patient} • {room.doctor}</p>
+                          )}
+                          {room.timeLeft && (
+                            <p className="text-xs text-slate-500">
+                              {room.status === 'maintenance' ? 'Maintenance time: ' : 'Time remaining: '}{room.timeLeft}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className={getStatusColor(room.status)}>
+                          {getStatusIcon(room.status)}
+                          {room.status.charAt(0).toUpperCase() + room.status.slice(1)}
+                        </Badge>
+                        <Button variant="outline" size="sm">Manage</Button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className={getStatusColor(item.status)}>
-                        {getStatusIcon(item.status)}
-                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                  {item.status !== 'maintenance' && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>Utilization</span>
-                        <span>{item.utilization}%</span>
-                      </div>
-                      <Progress value={item.utilization} className="h-2" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+                  ))}
+                </CardContent>
+              </Card>
 
-        {/* AI Optimization Panel */}
-        <Card className="ai-glow">
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Brain className="h-5 w-5 text-blue-600" />
-              <CardTitle>AI Resource Optimization</CardTitle>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-700">Active</Badge>
+              {/* Equipment Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Equipment Status</CardTitle>
+                  <CardDescription>Medical equipment monitoring and utilization</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {equipment.map((item) => (
+                    <div key={item.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Activity className="h-4 w-4 text-slate-400" />
+                          <div>
+                            <p className="font-medium text-slate-900">{item.name}</p>
+                            <p className="text-sm text-slate-600">{item.location}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className={getStatusColor(item.status)}>
+                            {getStatusIcon(item.status)}
+                            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                          </Badge>
+                        </div>
+                      </div>
+                      {item.status !== 'maintenance' && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span>Utilization</span>
+                            <span>{item.utilization}%</span>
+                          </div>
+                          <Progress value={item.utilization} className="h-2" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
-            <CardDescription>
-              Intelligent recommendations for resource allocation and energy efficiency
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-green-900">Optimal Allocation</p>
-                      <p className="text-xs text-green-700">Room assignments reduce patient walking by 30%</p>
+
+            {/* AI Optimization Panel */}
+            <Card className="ai-glow">
+              <CardHeader>
+                <div className="flex items-center space-x-2">
+                  <Brain className="h-5 w-5 text-blue-600" />
+                  <CardTitle>AI Resource Optimization</CardTitle>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">Active</Badge>
+                </div>
+                <CardDescription>
+                  Intelligent recommendations for resource allocation and energy efficiency
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-start space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-green-900">Optimal Allocation</p>
+                          <p className="text-xs text-green-700">Room assignments reduce patient walking by 30%</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-start space-x-2">
+                        <Zap className="h-4 w-4 text-blue-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-900">Energy Optimization</p>
+                          <p className="text-xs text-blue-700">Smart systems save 23% energy consumption</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                      <div className="flex items-start space-x-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-orange-900">Maintenance Alert</p>
+                          <p className="text-xs text-orange-700">X-Ray #2 requires service in 3 days</p>
+                          <Button size="sm" variant="outline" className="mt-2 border-orange-300 text-orange-700">
+                            Schedule
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                      <div className="flex items-start space-x-2">
+                        <TrendingUp className="h-4 w-4 text-purple-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-purple-900">Predictive Insight</p>
+                          <p className="text-xs text-purple-700">Room 3 shows highest efficiency ratings</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-start space-x-2">
-                    <Zap className="h-4 w-4 text-blue-600 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-900">Energy Optimization</p>
-                      <p className="text-xs text-blue-700">Smart lighting saves 23% energy consumption</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="flex items-start space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-orange-900">Maintenance Alert</p>
-                      <p className="text-xs text-orange-700">X-Ray #2 requires service in 3 days</p>
-                      <Button size="sm" variant="outline" className="mt-2 border-orange-300 text-orange-700">
-                        Schedule
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                  <div className="flex items-start space-x-2">
-                    <Brain className="h-4 w-4 text-purple-600 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-purple-900">Predictive Insight</p>
-                      <p className="text-xs text-purple-700">Room 3 shows highest patient satisfaction</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="occupancy">
+            <RoomOccupancyTracker />
+          </TabsContent>
+
+          <TabsContent value="maintenance">
+            <MaintenanceScheduler />
+          </TabsContent>
+
+          <TabsContent value="energy">
+            <EnergyMonitor />
+          </TabsContent>
+
+          <TabsContent value="alerts">
+            <ResourceAlerts />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

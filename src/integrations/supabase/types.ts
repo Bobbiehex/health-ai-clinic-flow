@@ -286,11 +286,64 @@ export type Database = {
           },
         ]
       }
+      energy_usage: {
+        Row: {
+          baseline_consumption: number | null
+          carbon_footprint_kg: number | null
+          consumption_kwh: number
+          cost_usd: number | null
+          created_at: string
+          efficiency_rating: number | null
+          id: string
+          measurement_period_hours: number | null
+          measurement_timestamp: string
+          peak_usage_time: string | null
+          resource_id: string
+          resource_type: string
+          savings_vs_baseline: number | null
+        }
+        Insert: {
+          baseline_consumption?: number | null
+          carbon_footprint_kg?: number | null
+          consumption_kwh: number
+          cost_usd?: number | null
+          created_at?: string
+          efficiency_rating?: number | null
+          id?: string
+          measurement_period_hours?: number | null
+          measurement_timestamp?: string
+          peak_usage_time?: string | null
+          resource_id: string
+          resource_type: string
+          savings_vs_baseline?: number | null
+        }
+        Update: {
+          baseline_consumption?: number | null
+          carbon_footprint_kg?: number | null
+          consumption_kwh?: number
+          cost_usd?: number | null
+          created_at?: string
+          efficiency_rating?: number | null
+          id?: string
+          measurement_period_hours?: number | null
+          measurement_timestamp?: string
+          peak_usage_time?: string | null
+          resource_id?: string
+          resource_type?: string
+          savings_vs_baseline?: number | null
+        }
+        Relationships: []
+      }
       equipment: {
         Row: {
+          alert_thresholds: Json | null
           created_at: string | null
+          efficiency_rating: number | null
+          energy_consumption_kwh: number | null
           id: string
+          iot_sensor_data: Json | null
           last_maintenance: string | null
+          maintenance_cost: number | null
           maintenance_notes: string | null
           model: string | null
           name: string
@@ -305,9 +358,14 @@ export type Database = {
           warranty_expiry: string | null
         }
         Insert: {
+          alert_thresholds?: Json | null
           created_at?: string | null
+          efficiency_rating?: number | null
+          energy_consumption_kwh?: number | null
           id?: string
+          iot_sensor_data?: Json | null
           last_maintenance?: string | null
+          maintenance_cost?: number | null
           maintenance_notes?: string | null
           model?: string | null
           name: string
@@ -322,9 +380,14 @@ export type Database = {
           warranty_expiry?: string | null
         }
         Update: {
+          alert_thresholds?: Json | null
           created_at?: string | null
+          efficiency_rating?: number | null
+          energy_consumption_kwh?: number | null
           id?: string
+          iot_sensor_data?: Json | null
           last_maintenance?: string | null
+          maintenance_cost?: number | null
           maintenance_notes?: string | null
           model?: string | null
           name?: string
@@ -344,6 +407,72 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_schedules: {
+        Row: {
+          actual_cost: number | null
+          assigned_technician_id: string | null
+          completion_date: string | null
+          cost_estimate: number | null
+          created_at: string
+          equipment_id: string
+          estimated_duration_hours: number | null
+          id: string
+          maintenance_type: string
+          notes: string | null
+          priority_level: number | null
+          scheduled_date: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          assigned_technician_id?: string | null
+          completion_date?: string | null
+          cost_estimate?: number | null
+          created_at?: string
+          equipment_id: string
+          estimated_duration_hours?: number | null
+          id?: string
+          maintenance_type: string
+          notes?: string | null
+          priority_level?: number | null
+          scheduled_date: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          assigned_technician_id?: string | null
+          completion_date?: string | null
+          cost_estimate?: number | null
+          created_at?: string
+          equipment_id?: string
+          estimated_duration_hours?: number | null
+          id?: string
+          maintenance_type?: string
+          notes?: string | null
+          priority_level?: number | null
+          scheduled_date?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_schedules_assigned_technician_id_fkey"
+            columns: ["assigned_technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_schedules_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
             referencedColumns: ["id"]
           },
         ]
@@ -563,6 +692,179 @@ export type Database = {
           },
         ]
       }
+      resource_alerts: {
+        Row: {
+          alert_data: Json | null
+          alert_type: string
+          auto_generated: boolean | null
+          created_at: string
+          id: string
+          is_resolved: boolean | null
+          message: string
+          resolved_at: string | null
+          resolved_by: string | null
+          resource_id: string
+          resource_type: string
+          severity: string | null
+          title: string
+        }
+        Insert: {
+          alert_data?: Json | null
+          alert_type: string
+          auto_generated?: boolean | null
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          message: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resource_id: string
+          resource_type: string
+          severity?: string | null
+          title: string
+        }
+        Update: {
+          alert_data?: Json | null
+          alert_type?: string
+          auto_generated?: boolean | null
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          message?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resource_id?: string
+          resource_type?: string
+          severity?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_allocations: {
+        Row: {
+          actual_usage_metrics: Json | null
+          ai_recommendations: Json | null
+          allocation_date: string
+          appointment_id: string | null
+          created_at: string
+          energy_efficiency_score: number | null
+          equipment_ids: string[] | null
+          id: string
+          optimization_score: number | null
+          room_id: string
+          updated_at: string
+          utilization_rate: number | null
+        }
+        Insert: {
+          actual_usage_metrics?: Json | null
+          ai_recommendations?: Json | null
+          allocation_date: string
+          appointment_id?: string | null
+          created_at?: string
+          energy_efficiency_score?: number | null
+          equipment_ids?: string[] | null
+          id?: string
+          optimization_score?: number | null
+          room_id: string
+          updated_at?: string
+          utilization_rate?: number | null
+        }
+        Update: {
+          actual_usage_metrics?: Json | null
+          ai_recommendations?: Json | null
+          allocation_date?: string
+          appointment_id?: string | null
+          created_at?: string
+          energy_efficiency_score?: number | null
+          equipment_ids?: string[] | null
+          id?: string
+          optimization_score?: number | null
+          room_id?: string
+          updated_at?: string
+          utilization_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_allocations_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_allocations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_occupancy: {
+        Row: {
+          actual_usage_minutes: number | null
+          created_at: string
+          energy_consumption_kwh: number | null
+          expected_duration_minutes: number | null
+          id: string
+          occupancy_sensors: Json | null
+          occupied_by_appointment_id: string | null
+          occupied_since: string | null
+          room_id: string
+          temperature_celsius: number | null
+          updated_at: string
+        }
+        Insert: {
+          actual_usage_minutes?: number | null
+          created_at?: string
+          energy_consumption_kwh?: number | null
+          expected_duration_minutes?: number | null
+          id?: string
+          occupancy_sensors?: Json | null
+          occupied_by_appointment_id?: string | null
+          occupied_since?: string | null
+          room_id: string
+          temperature_celsius?: number | null
+          updated_at?: string
+        }
+        Update: {
+          actual_usage_minutes?: number | null
+          created_at?: string
+          energy_consumption_kwh?: number | null
+          expected_duration_minutes?: number | null
+          id?: string
+          occupancy_sensors?: Json | null
+          occupied_by_appointment_id?: string | null
+          occupied_since?: string | null
+          room_id?: string
+          temperature_celsius?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_occupancy_occupied_by_appointment_id_fkey"
+            columns: ["occupied_by_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           capacity: number | null
@@ -688,6 +990,15 @@ export type Database = {
           optimization_factors: Json
         }[]
       }
+      generate_maintenance_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          equipment_id: string
+          alert_type: string
+          severity: string
+          message: string
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
@@ -695,6 +1006,27 @@ export type Database = {
       is_medical_staff: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      optimize_resource_allocation: {
+        Args: { p_date: string; p_optimization_goals?: string[] }
+        Returns: {
+          room_id: string
+          equipment_recommendations: string[]
+          optimization_score: number
+          energy_savings_estimate: number
+          cost_savings_estimate: number
+          utilization_improvement: number
+          recommendations: Json
+        }[]
+      }
+      update_room_occupancy: {
+        Args: {
+          p_room_id: string
+          p_appointment_id?: string
+          p_temperature?: number
+          p_sensor_data?: Json
+        }
+        Returns: string
       }
     }
     Enums: {
