@@ -20,7 +20,7 @@ export const useRoomOccupancy = () => {
             id,
             reason_for_visit,
             patient:patients (
-              user:users (first_name, last_name)
+              user:users!patients_user_id_fkey (first_name, last_name)
             ),
             doctor:users!appointments_doctor_id_fkey (first_name, last_name)
           )
