@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -137,8 +138,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Avatar className="h-8 w-8">
             <AvatarImage src={message.sender?.avatar_url} />
             <AvatarFallback>
-              {message.sender?.first_name?.charAt(0) || ''}
-              {message.sender?.last_name?.charAt(0) || ''}
+              {String(message.sender?.first_name?.charAt(0) || '')}
+              {String(message.sender?.last_name?.charAt(0) || '')}
             </AvatarFallback>
           </Avatar>
         )}
@@ -147,7 +148,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         <div className="flex-1">
           {isFirstFromSender && !isOwnMessage && (
             <p className="text-xs text-gray-500 mb-1 px-3">
-              {message.sender?.first_name} {message.sender?.last_name}
+              {String(message.sender?.first_name || '')} {String(message.sender?.last_name || '')}
             </p>
           )}
 
@@ -165,7 +166,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
 
             {message.content && (
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              <p className="text-sm whitespace-pre-wrap">{String(message.content)}</p>
             )}
 
             {renderFilePreview()}
