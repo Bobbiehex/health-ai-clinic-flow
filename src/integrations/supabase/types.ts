@@ -286,6 +286,158 @@ export type Database = {
           },
         ]
       }
+      call_sessions: {
+        Row: {
+          connection_data: Json | null
+          conversation_id: string
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          initiated_by: string
+          is_emergency_call: boolean | null
+          participants: string[] | null
+          quality_rating: number | null
+          recording_url: string | null
+          started_at: string | null
+          status: string | null
+          type: string
+        }
+        Insert: {
+          connection_data?: Json | null
+          conversation_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          initiated_by: string
+          is_emergency_call?: boolean | null
+          participants?: string[] | null
+          quality_rating?: number | null
+          recording_url?: string | null
+          started_at?: string | null
+          status?: string | null
+          type: string
+        }
+        Update: {
+          connection_data?: Json | null
+          conversation_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          initiated_by?: string
+          is_emergency_call?: boolean | null
+          participants?: string[] | null
+          quality_rating?: number | null
+          recording_url?: string | null
+          started_at?: string | null
+          status?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_sessions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_sessions_initiated_by_fkey"
+            columns: ["initiated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          id: string
+          is_muted: boolean | null
+          joined_at: string
+          last_read_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          is_muted?: boolean | null
+          joined_at?: string
+          last_read_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          is_muted?: boolean | null
+          joined_at?: string
+          last_read_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_emergency: boolean | null
+          title: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       energy_usage: {
         Row: {
           baseline_consumption: number | null
@@ -556,47 +708,129 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
+          content_type: string | null
+          conversation_id: string | null
           created_at: string | null
+          edited_at: string | null
+          encryption_key_id: string | null
+          file_mime_type: string | null
+          file_name: string | null
+          file_size: number | null
           file_url: string | null
           id: string
+          is_deleted: boolean | null
+          is_encrypted: boolean | null
           is_read: boolean | null
           is_urgent: boolean | null
           message_type: Database["public"]["Enums"]["message_type"] | null
+          metadata: Json | null
           patient_id: string | null
+          priority: string | null
           read_at: string | null
           receiver_id: string | null
+          reply_to_message_id: string | null
           sender_id: string | null
         }
         Insert: {
           content: string
+          content_type?: string | null
+          conversation_id?: string | null
           created_at?: string | null
+          edited_at?: string | null
+          encryption_key_id?: string | null
+          file_mime_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
           file_url?: string | null
           id?: string
+          is_deleted?: boolean | null
+          is_encrypted?: boolean | null
           is_read?: boolean | null
           is_urgent?: boolean | null
           message_type?: Database["public"]["Enums"]["message_type"] | null
+          metadata?: Json | null
           patient_id?: string | null
+          priority?: string | null
           read_at?: string | null
           receiver_id?: string | null
+          reply_to_message_id?: string | null
           sender_id?: string | null
         }
         Update: {
           content?: string
+          content_type?: string | null
+          conversation_id?: string | null
           created_at?: string | null
+          edited_at?: string | null
+          encryption_key_id?: string | null
+          file_mime_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
           file_url?: string | null
           id?: string
+          is_deleted?: boolean | null
+          is_encrypted?: boolean | null
           is_read?: boolean | null
           is_urgent?: boolean | null
           message_type?: Database["public"]["Enums"]["message_type"] | null
+          metadata?: Json | null
           patient_id?: string | null
+          priority?: string | null
           read_at?: string | null
           receiver_id?: string | null
+          reply_to_message_id?: string | null
           sender_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_patient_id_fkey"
             columns: ["patient_id"]
@@ -612,8 +846,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          content: string
+          created_at: string
+          delivery_method: string[] | null
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          metadata: Json | null
+          priority: string | null
+          read_at: string | null
+          related_id: string | null
+          scheduled_for: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          delivery_method?: string[] | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          metadata?: Json | null
+          priority?: string | null
+          read_at?: string | null
+          related_id?: string | null
+          scheduled_for?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          delivery_method?: string[] | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          metadata?: Json | null
+          priority?: string | null
+          read_at?: string | null
+          related_id?: string | null
+          scheduled_for?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -975,6 +1275,17 @@ export type Database = {
           conflict_details: Json
         }[]
       }
+      create_notification: {
+        Args: {
+          p_user_id: string
+          p_type: string
+          p_title: string
+          p_content: string
+          p_priority?: string
+          p_related_id?: string
+        }
+        Returns: string
+      }
       find_optimal_appointment_slots: {
         Args: {
           p_date: string
@@ -1003,9 +1314,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      get_or_create_direct_conversation: {
+        Args: { p_user1_id: string; p_user2_id: string }
+        Returns: string
+      }
       is_medical_staff: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      mark_messages_as_read: {
+        Args: { p_conversation_id: string; p_user_id?: string }
+        Returns: undefined
       }
       optimize_resource_allocation: {
         Args: { p_date: string; p_optimization_goals?: string[] }
