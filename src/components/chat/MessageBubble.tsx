@@ -61,7 +61,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {isImage && (
           <img
             src={message.file_url}
-            alt={message.file_name}
+            alt={message.file_name || 'Image'}
             className="max-w-xs rounded-lg shadow-sm"
           />
         )}
@@ -95,7 +95,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const renderReactions = () => {
     if (!message.reactions?.length) return null;
 
-    const reactionCounts = message.reactions.reduce((acc: any, reaction: any) => {
+    const reactionCounts = message.reactions.reduce((acc: Record<string, number>, reaction: any) => {
       acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
       return acc;
     }, {});
@@ -118,8 +118,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Avatar className="h-8 w-8">
             <AvatarImage src={message.sender?.avatar_url} />
             <AvatarFallback>
-              {message.sender?.first_name?.charAt(0)}
-              {message.sender?.last_name?.charAt(0)}
+              {message.sender?.first_name?.charAt(0) || ''}
+              {message.sender?.last_name?.charAt(0) || ''}
             </AvatarFallback>
           </Avatar>
         )}

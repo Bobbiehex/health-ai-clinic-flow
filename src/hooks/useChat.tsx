@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -18,13 +17,38 @@ export const useConversations = () => {
             id,
             content,
             created_at,
-            sender:users (first_name, last_name)
+            sender:sender_id (*)
           )
         `)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Transform the data to get the actual last message for each conversation
+      const conversationsWithLastMessage = await Promise.all(
+        (data || []).map(async (conversation) => {
+          const { data: lastMessage } = await supabase
+            .from('messages')
+            .select(`
+              id,
+              content,
+              created_at,
+              sender:users!messages_sender_id_fkey (first_name, last_name)
+            `)
+            .eq('conversation_id', conversation.id)
+            .eq('is_deleted', false)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          return {
+            ...conversation,
+            last_message: lastMessage
+          };
+        })
+      );
+
+      return conversationsWithLastMessage;
     }
   });
 
@@ -39,10 +63,10 @@ export const useMessages = (conversationId: string) => {
         .from('messages')
         .select(`
           *,
-          sender:users (id, first_name, last_name, avatar_url),
+          sender:users!messages_sender_id_fkey (id, first_name, last_name, avatar_url),
           reactions:message_reactions (
             emoji,
-            user:users (id, first_name, last_name)
+            user:users!message_reactions_user_id_fkey (id, first_name, last_name)
           )
         `)
         .eq('conversation_id', conversationId)
