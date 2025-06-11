@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +49,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     setShowReactions(false);
   };
 
+  const formatFileSize = (fileSize: unknown): string => {
+    if (typeof fileSize === 'number') {
+      return `${(fileSize / 1024).toFixed(1)} KB`;
+    }
+    if (typeof fileSize === 'string') {
+      const sizeNum = Number(fileSize);
+      if (!isNaN(sizeNum)) {
+        return `${(sizeNum / 1024).toFixed(1)} KB`;
+      }
+    }
+    return '';
+  };
+
   const renderFilePreview = () => {
     if (!message.file_url) return null;
 
@@ -78,12 +90,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{message.file_name}</p>
               <p className="text-xs text-gray-500">
-                {message.file_size && typeof message.file_size === 'number' 
-                  ? `${(message.file_size / 1024).toFixed(1)} KB`
-                  : message.file_size && typeof message.file_size === 'string'
-                  ? `${(Number(message.file_size) / 1024).toFixed(1)} KB`
-                  : ''
-                }
+                {formatFileSize(message.file_size)}
               </p>
             </div>
             <Button size="sm" variant="ghost" asChild>
