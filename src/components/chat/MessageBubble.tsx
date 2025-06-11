@@ -62,6 +62,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     return '';
   };
 
+  const safeFileName = (fileName: unknown): string => {
+    if (typeof fileName === 'string') {
+      return fileName;
+    }
+    return 'File';
+  };
+
   const renderFilePreview = () => {
     if (!message.file_url) return null;
 
@@ -73,7 +80,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {isImage && (
           <img
             src={message.file_url}
-            alt={message.file_name || 'Image'}
+            alt={safeFileName(message.file_name)}
             className="max-w-xs rounded-lg shadow-sm"
           />
         )}
@@ -88,13 +95,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div className="flex items-center space-x-2 p-3 bg-gray-100 rounded-lg max-w-xs">
             <File className="h-5 w-5 text-gray-500" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{message.file_name}</p>
+              <p className="text-sm font-medium truncate">{safeFileName(message.file_name)}</p>
               <p className="text-xs text-gray-500">
                 {formatFileSize(message.file_size)}
               </p>
             </div>
             <Button size="sm" variant="ghost" asChild>
-              <a href={message.file_url} download={message.file_name}>
+              <a href={message.file_url} download={safeFileName(message.file_name)}>
                 <Download className="h-4 w-4" />
               </a>
             </Button>
