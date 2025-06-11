@@ -18,7 +18,7 @@ export const MessageReactions: React.FC<MessageReactionsProps> = ({ reactions })
     <div className="flex flex-wrap gap-1 mt-2">
       {Object.entries(reactionCounts).map(([emoji, count]) => (
         <Badge key={emoji} variant="secondary" className="text-xs">
-          {emoji} {count}
+          {emoji} {String(count)}
         </Badge>
       ))}
     </div>
