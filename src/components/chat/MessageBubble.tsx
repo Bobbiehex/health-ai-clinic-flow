@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -78,7 +77,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{message.file_name}</p>
               <p className="text-xs text-gray-500">
-                {message.file_size ? `${(message.file_size / 1024).toFixed(1)} KB` : ''}
+                {message.file_size ? `${(Number(message.file_size) / 1024).toFixed(1)} KB` : ''}
               </p>
             </div>
             <Button size="sm" variant="ghost" asChild>
