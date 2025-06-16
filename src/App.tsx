@@ -12,6 +12,7 @@ import PatientManagement from "./pages/PatientManagement";
 import Appointments from "./pages/Appointments";
 import Resources from "./pages/Resources";
 import Analytics from "./pages/Analytics";
+import Security from "./pages/Security";
 import Testing from "./pages/Testing";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
@@ -73,6 +74,14 @@ const App = () => {
                 element={
                   <ProtectedRoute requiredRole="doctor">
                     <Analytics />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/security" 
+                element={
+                  <ProtectedRoute requiredRole="doctor">
+                    <Security />
                   </ProtectedRoute>
                 } 
               />

@@ -3,7 +3,9 @@ import React from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from '@/components/chat/NotificationBell';
+import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { useSessionManagement } from '@/hooks/useSessionManagement';
 import { 
   LayoutDashboard, 
   Users, 
@@ -12,7 +14,8 @@ import {
   BarChart3, 
   Settings,
   LogOut,
-  Wrench
+  Wrench,
+  Shield
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -20,11 +23,12 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const location = useLocation();
   
-  // Enable real-time notifications
+  // Enable real-time notifications and session management
   useRealtimeNotifications();
+  useSessionManagement();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -39,8 +43,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   ];
 
+  // Add security dashboard for admin and doctor roles
+  if (profile?.role === 'admin' || profile?.role === 'doctor') {
+    navigation.push({ name: 'Security', href: '/security', icon: Shield });
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <SessionTimeoutWarning />
+      
       {/* Navigation */}
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,6 +86,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-700">
                   {user.user_metadata?.first_name} {user.user_metadata?.last_name}
+                </span>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {profile?.role}
                 </span>
                 <button
                   onClick={signOut}
