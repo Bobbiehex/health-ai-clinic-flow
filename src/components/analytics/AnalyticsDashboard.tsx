@@ -69,7 +69,7 @@ export const AnalyticsDashboard: React.FC = () => {
     }
   };
 
-  const handleExportReport = async (format: 'csv' | 'pdf') => {
+  const handleExportReport = async (reportFormat: 'csv' | 'pdf') => {
     const filters = {
       category: selectedCategory !== 'all' ? selectedCategory : undefined,
       department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
@@ -79,7 +79,7 @@ export const AnalyticsDashboard: React.FC = () => {
       } : undefined
     };
 
-    const report = await exportAnalyticsReport(format, filters);
+    const report = await exportAnalyticsReport(reportFormat, filters);
     if (report?.url) {
       window.open(report.url, '_blank');
     }
