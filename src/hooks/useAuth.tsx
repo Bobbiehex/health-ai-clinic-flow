@@ -25,35 +25,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       console.log('Auth state changed:', event, session?.user?.email);
       
       setSession(session);
       setUser(session?.user ?? null);
       
       // Defer additional operations to prevent auth callback blocking
-      if (session?.user) {
+      if (session?.user && mounted) {
         setTimeout(() => {
-          fetchUserProfile(session.user.id);
-          // Log successful authentication
-          logAction('user_login', 'authentication', session.user.id);
+          if (mounted) {
+            fetchUserProfile(session.user.id);
+            // Log successful authentication
+            logAction('user_login', 'authentication', session.user.id);
+          }
         }, 0);
       } else {
-        setProfile(null);
-        if (event === 'SIGNED_OUT') {
-          setTimeout(() => {
-            logAction('user_logout', 'authentication', user?.id || 'unknown');
-          }, 0);
+        if (mounted) {
+          setProfile(null);
+          if (event === 'SIGNED_OUT') {
+            setTimeout(() => {
+              logAction('user_logout', 'authentication', user?.id || 'unknown');
+            }, 0);
+          }
         }
       }
-      setLoading(false);
+      
+      if (mounted) {
+        setLoading(false);
+      }
     });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -62,7 +75,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
@@ -194,6 +210,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    console.error('useAuth must be used within an AuthProvider');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

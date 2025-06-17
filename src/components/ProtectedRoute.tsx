@@ -11,6 +11,8 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { user, profile, loading } = useAuth();
 
+  console.log('ProtectedRoute render:', { user: !!user, profile: !!profile, loading });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -20,6 +22,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   }
 
   if (!user) {
+    console.log('No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
@@ -30,6 +33,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     const requiredLevel = roleHierarchy[requiredRole];
 
     if (userLevel < requiredLevel) {
+      console.log('Insufficient permissions, redirecting to dashboard');
       return <Navigate to="/dashboard" replace />;
     }
   }
