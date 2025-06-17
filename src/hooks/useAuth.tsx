@@ -3,7 +3,6 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { Tables } from '@/integrations/supabase/types';
-import { useAuditLog } from '@/hooks/useAuditLog';
 
 type UserProfile = Tables<'users'>;
 
@@ -24,7 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { logAction } = useAuditLog();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -83,6 +81,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const logAction = async (
+    action: string,
+    resourceType: string,
+    resourceId: string,
+    metadata?: any
+  ) => {
+    try {
+      const { error } = await supabase.functions.invoke('audit-logger', {
+        body: {
+          action,
+          resource_type: resourceType,
+          resource_id: resourceId,
+          metadata,
+        },
+      });
+
+      if (error) {
+        console.error('Audit log error:', error);
+      }
+    } catch (error) {
+      console.error('Failed to log audit action:', error);
     }
   };
 
